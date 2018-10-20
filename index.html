@@ -1,0 +1,115 @@
+<html>
+    <head>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+        <script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
+    </head>
+    <body>
+        <div id="container"></div>
+        <script>
+            var scene, renderer, camera, light, controls;
+            var geometry, material, mesh;
+
+            function init() {
+                //Dimensions
+                var width = window.innerWidth;
+                var height = window.innerHeight;
+
+                //Scene
+                scene = new THREE.Scene();
+
+                //Render
+                renderer = new THREE.WebGLRenderer();
+                renderer.setSize(width, height);
+                renderer.setClearColor(0xBBBBBB, 1);
+                renderer.clear();
+
+                //Mount Render
+                container = document.getElementById('container');
+                container.appendChild( renderer.domElement );
+
+                //Camera
+                var angle = 75, aspect = width / height, near = 0.1, far = 1000000;
+                camera = new THREE.PerspectiveCamera(angle, aspect, near, far);
+                camera.position.set(0, 100, 0);
+                scene.add( camera );
+
+                //Light
+                light = new THREE.PointLight(0xFFFFFF);
+                light.position.set( 0, 100, 100 );
+                scene.add(light);
+
+                //Controls
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                update();
+                render();
+            }
+
+            function update() {
+                controls.update()
+            }
+
+            function render() {
+                renderer.render(scene, camera);
+            }
+
+            function plotPoint(x, y, z) {
+                // loop through the points and add them to the scene
+                for( var i=0 ; i < z.length ; i++ ) {
+
+                    // geometry describes the shape
+                    geometry = new THREE.SphereGeometry(0, 0, 0) ;
+
+                    if (z[i] < 0 && z[i] > -4) {
+                        // Warning
+                        debugger;
+                        material = new THREE.MeshLambertMaterial({ color:0xFFFF00 });
+                    } else if(z[i] <= -4) {
+                        // Damage
+                        material = new THREE.MeshLambertMaterial({ color:0xFF0000 });
+                    } else {
+                        // Good
+                        material = new THREE.MeshLambertMaterial({ color:0x00FF33 });
+                    }
+
+                    // Mesh maps the material onto the geometry to make an object
+                    mesh = new THREE.Mesh(geometry, material);
+
+                    // Position the mesh in space
+                    mesh.position.set(x[i], y[i], z[i]);
+
+                    // Add the mesh to the scene
+                    scene.add(mesh);
+                }
+            }
+
+            function populateContainer() {
+                var x = [];
+                var y = [];
+                var z = [];
+
+                $.getJSON( "reports.json", function(data) {
+                    $.each( data.report, function(key, value) {
+                        x.push(parseFloat(value.x));
+                        y.push(parseFloat(value.y));
+                        z.push(parseFloat(value.z));
+                    });
+                    plotPoint(x, y, z) ;
+                    update();
+                    render();
+                });
+            }
+
+            $(document).ready( function(){
+                init();
+                animate();
+
+                populateContainer();
+            });
+        </script>
+    </body>
+</html>
